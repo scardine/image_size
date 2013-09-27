@@ -1,11 +1,19 @@
+![Look, Ma! No deps!](https://raw.github.com/scardine/image_size/master/lookmanodeps.png)
+
+
 image_size
 ==========
 
 Get image width and height given a file path using minimal dependencies (no need for PIL, libjpeg, libpng, etc).
 
 
+Why don't you just use PIL?
+---------------------------
 
-usage
+PIL is huge and has lots of dependencies, may be an overkill if you just want the dimensions. 
+If you already have PIL installed, then sure, use it instead.
+
+Usage
 -----
 
 Right now only for PNG, JPEG and GIF. Very untested, fork and send PRs.
