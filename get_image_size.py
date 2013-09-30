@@ -18,7 +18,7 @@ class UnknownImageFormat(Exception):
 def get_image_size(file_path):
     """
     Return (width, height) for a given img file content - no external
-    dependencies except the standasd os and struct modules
+    dependencies except the os and struct builtin modules
     """
     size = os.path.getsize(file_path)
 
