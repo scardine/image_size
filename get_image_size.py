@@ -12,6 +12,8 @@
 import os
 import struct
 
+FILE_UNKNOWN = "Sorry, don't know how to get size for this file."
+
 class UnknownImageFormat(Exception):
     pass
 
@@ -68,8 +70,26 @@ def get_image_size(file_path):
                 raise UnknownImageFormat("ValueError" + msg)
             except Exception as e:
                 raise UnknownImageFormat(e.__class__.__name__ + msg)
+        elif size >= 2:
+        	#see http://en.wikipedia.org/wiki/ICO_(file_format)
+        	input.seek(0)
+        	reserved = input.read(2)
+        	if 0 != struct.unpack("<H", reserved )[0]:
+        		raise UnknownImageFormat(FILE_UNKNOWN)
+        	format = input.read(2)
+        	assert 1 == struct.unpack("<H", format)[0]
+        	num = input.read(2)
+        	num = struct.unpack("<H", num)[0]
+        	if num > 1:
+        		import warnings
+        		warnings.warn("ICO File contains more than one image")
+        	#http://msdn.microsoft.com/en-us/library/ms997538.aspx
+        	w = input.read(1) 
+        	h = input.read(1) 
+        	width = ord(w)
+        	height = ord(h)
         else:
-            raise UnknownImageFormat("Sorry, don't know how to get size for this file.")
+            raise UnknownImageFormat(FILE_UNKNOWN)
 
     return width, height
 
