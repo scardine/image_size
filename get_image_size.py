@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #-------------------------------------------------------------------------------
 # Name:        get_image_size
 # Purpose:     extract image dimentions given a file path
@@ -84,8 +86,8 @@ def get_image_size(file_path):
         		import warnings
         		warnings.warn("ICO File contains more than one image")
         	#http://msdn.microsoft.com/en-us/library/ms997538.aspx
-        	w = input.read(1) 
-        	h = input.read(1) 
+        	w = input.read(1)
+        	h = input.read(1)
         	width = ord(w)
         	height = ord(h)
         else:
