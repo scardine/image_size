@@ -26,7 +26,8 @@ def get_image_size(file_path):
     """
     size = os.path.getsize(file_path)
 
-    with open(file_path) as input:
+    # be explicit with open arguments - we need binary mode
+    with open(file_path, "rb") as input:
         height = -1
         width = -1
         data = input.read(25)
