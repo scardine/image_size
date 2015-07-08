@@ -30,7 +30,7 @@ def get_image_size(file_path):
     with open(file_path, "rb") as input:
         height = -1
         width = -1
-        data = input.read(25)
+        data = input.read(26)
         msg = " raised while trying to decode as JPEG."
 
         if (size >= 10) and data[:6] in ('GIF87a', 'GIF89a'):
@@ -73,6 +73,19 @@ def get_image_size(file_path):
                 raise UnknownImageFormat("ValueError" + msg)
             except Exception as e:
                 raise UnknownImageFormat(e.__class__.__name__ + msg)
+        elif (size >= 26) and data.startswith('BM'):
+            # BMP
+            headersize = struct.unpack("<I", data[14:18])[0]
+            if headersize == 12:
+                w, h = struct.unpack("<HH", data[18:22])
+                width = int(w)
+                height = int(h)
+            elif headersize >= 40:
+                w, h = struct.unpack("<ii", data[18:26])
+                width = int(w)
+                height = abs(int(h)) # as h is negative when stored upside down
+            else:
+                raise UnknownImageFormat("Unkown DIB header size:" + str(headersize))
         elif size >= 2:
         	#see http://en.wikipedia.org/wiki/ICO_(file_format)
         	input.seek(0)
