@@ -6,7 +6,7 @@ Get image width and height given a file path using minimal dependencies (no need
 Why don't you just use PIL?
 ---------------------------
 
-PIL is huge and has lots of dependencies, may be an overkill if you just want the dimensions.
+PIL is huge and has lots of dependencies, perhaps an overkill if you want just the image dimensions.
 If you already have PIL installed, then sure, use it instead.
 
 This was written in answer for the question "[Get Image size WITHOUT loading image into memory](http://stackoverflow.com/questions/15800704/python-get-image-size-without-loading-image-into-memory/)"
@@ -32,6 +32,6 @@ Right now only for PNG, JPEG, GIF and BMP. Very untested, fork and send PRs.
 Updates
 -------
 
-Over the time people sent updates for ".ico", ".bmp" and other improvements.
+Over the time people sent updates for ".ico", ".bmp" and other improvements. It interesting to have all those algorithms in the same place so people can reimplement it on other languages, so thanks for all the pull requests (you can see the list of contributions in the history).
 
- > I added support for BMP file types, respecting different types of DIB headers. Should work on all current bitmap types, tested for old OS/2 and BITMAPCOREHEADER files, too. You might try it and consider it for merging if you find it useful. *No longer under 100 LOC though, sorry ;)*
+ > I added support for BMP file types, respecting different types of DIB headers. Should work on all current bitmap types, tested for old OS/2 and BITMAPCOREHEADER files, too. You might try it and consider it for merging if you find it useful. **No longer under 100 LOC though, sorry ;)**
