@@ -27,3 +27,11 @@ Right now only for PNG, JPEG, GIF and BMP. Very untested, fork and send PRs.
         width, height = get_image_size('/path/to/image.ext')
     except UnknownImageFormat:
         width, height = -1, -1
+
+
+Updates
+-------
+
+Over the time people sent updates for ".ico", ".bmp" and other improvements.
+
+ > I added support for BMP file types, respecting different types of DIB headers. Should work on all current bitmap types, tested for old OS/2 and BITMAPCOREHEADER files, too. You might try it and consider it for merging if you find it useful. *No longer under 100 LOC though, sorry ;)*
