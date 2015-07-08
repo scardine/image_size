@@ -73,14 +73,14 @@ def get_image_size(file_path):
                 raise UnknownImageFormat("ValueError" + msg)
             except Exception as e:
                 raise UnknownImageFormat(e.__class__.__name__ + msg)
-        elif (size >= 2) and data.startswith('BM'):
+        elif (size >= 26) and data.startswith('BM'):
             # BMP
             headersize = struct.unpack("<I", data[14:18])[0]
             if headersize == 12:
-                raise UnknownImageFormat("Windows 2.0 (BITMAPCOREHEADER) and OS/2 1.x Bitmaps (OS21XBITMAPHEADER) are not supported.")
-            if headersize == 64:
-                raise UnknownImageFormat("OS/2 2.x Bitmaps (OS22XBITMAPHEADER) are not supported.")
-            if headersize >= 40:
+                w, h = struct.unpack("<HH", data[18:22])
+                width = int(w)
+                height = int(h)
+            elif headersize >= 40:
                 w, h = struct.unpack("<ii", data[18:26])
                 width = int(w)
                 height = abs(int(h)) # as h is negative when stored upside down
