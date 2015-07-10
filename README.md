@@ -39,4 +39,4 @@ Over the time people sent updates for ".ico", ".bmp" and other improvements. It 
 Thanks
 ------
 
-Thanks everyone who contributed with code or bug reports. You know who you are, THANK YOU!
+Thanks everyone who inspired this, contributed with code or sent bug reports. You know who you are, THANK YOU!
