@@ -35,3 +35,8 @@ Updates
 Over the time people sent updates for ".ico", ".bmp" and other improvements. It interesting to have all those algorithms in the same place so people can reimplement them using other languages, so thanks for all the pull requests (you can see the list of contributions in the history).
 
  > I added support for BMP file types, respecting different types of DIB headers. Should work on all current bitmap types, tested for old OS/2 and BITMAPCOREHEADER files, too. You might try it and consider it for merging if you find it useful. **No longer under 100 LOC though, sorry ;)**
+ 
+Thanks
+------
+
+Thanks everyone who contributed with code or bug reports. You know who you are, THANK YOU!
