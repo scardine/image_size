@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #-------------------------------------------------------------------------------
 # Name:        get_image_size
-# Purpose:     extract image dimentions given a file path
+# Purpose:     extract image dimensions given a file path
 #
 # Author:      Paulo Scardine (based on code from Emmanuel VAÏSSE)
 #
@@ -86,6 +86,35 @@ def get_image_size(file_path):
                 height = abs(int(h)) # as h is negative when stored upside down
             else:
                 raise UnknownImageFormat("Unkown DIB header size:" + str(headersize))
+        elif (size >= 8) and data[:4] in ("II\052\000", "MM\000\052"):
+            # Standard TIFF, big- or little-endian
+            # BigTIFF and other different but TIFF-like formats are not supported currently
+            byteOrder = data[:2]
+            boChar = ">" if byteOrder == "MM" else "<"
+            ifdOffset = struct.unpack(boChar + "L", data[4:8])[0]
+            try:
+                countSize = 2
+                input.seek(ifdOffset)
+                ec = input.read(countSize)
+                ifdEntryCount = struct.unpack(boChar + "H", ec)[0]
+                ifdEntrySize = 12 # 2 bytes: TagId + 2 bytes: type + 4 bytes: count of values + 4 bytes: value offset
+                for i in range(ifdEntryCount):
+                   entryOffset = ifdOffset + countSize + i * ifdEntrySize
+                   input.seek(entryOffset)
+                   tag = input.read(2)
+                   tag = struct.unpack(boChar + "H", tag)[0]
+                   if(tag == 256):
+                       input.seek(entryOffset + 8)
+                       w = input.read(2) # assuming SHORT atm, i.e. only imgs with max resolution of 64k x 64k supported
+                       width = int(struct.unpack(boChar + "H", w)[0])
+                   elif(tag == 257):
+                       input.seek(entryOffset + 8)
+                       h = input.read(2) # assuming SHORT atm, i.e. only imgs with max resolution of 64k x 64k supported
+                       height = int(struct.unpack(boChar + "H", h)[0])
+                   if width > -1 and height > -1:
+                       break
+            except Exception as e:
+                raise UnknownImageFormat(str(e))
         elif size >= 2:
         	#see http://en.wikipedia.org/wiki/ICO_(file_format)
         	input.seek(0)
