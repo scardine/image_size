@@ -19,7 +19,7 @@ As you say, avoiding PIL is worth it for its own sake.
 Usage
 -----
 
-Right now only for PNG, JPEG, GIF and BMP. Very untested, fork and send PRs.
+Right now only for PNG, JPEG, GIF, BMP and TIF. Very untested, fork and send PRs.
 
     from get_image_size import get_image_size, UnknownImageFormat
 
