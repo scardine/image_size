@@ -91,6 +91,20 @@ def get_image_size(file_path):
             # BigTIFF and other different but TIFF-like formats are not supported currently
             byteOrder = data[:2]
             boChar = ">" if byteOrder == "MM" else "<"
+            tiffTypes = { # maps TIFF type id to size (in bytes) and python format char for struct
+                1  : (1, boChar + "B"),  # BYTE
+                2  : (1, boChar + "c"),  # ASCII
+                3  : (2, boChar + "H"),  # SHORT
+                4  : (4, boChar + "L"),  # LONG
+                5  : (8, boChar + "LL"), # RATIONAL
+                6  : (1, boChar + "b"),  # SBYTE
+                7  : (1, boChar + "c"),  # UNDEFINED
+                8  : (2, boChar + "h"),  # SSHORT
+                9  : (4, boChar + "l"),  # SLONG
+                10 : (8, boChar + "ll"), # SRATIONAL
+                11 : (4, boChar + "f"),  # FLOAT
+                12 : (8, boChar + "d")   # DOUBLE
+            }
             ifdOffset = struct.unpack(boChar + "L", data[4:8])[0]
             try:
                 countSize = 2
@@ -103,14 +117,21 @@ def get_image_size(file_path):
                    input.seek(entryOffset)
                    tag = input.read(2)
                    tag = struct.unpack(boChar + "H", tag)[0]
-                   if(tag == 256):
+                   if(tag == 256 or tag == 257):
+                       # if type indicates that value fits into 4 bytes, value offset is not an offset but value itself
+                       type = input.read(2)
+                       type = struct.unpack(boChar + "H", type)[0]
+                       if not type in tiffTypes:
+                           raise UnknownImageFormat("Unkown TIFF field type:" + str(type))
+                       typeSize = tiffTypes[type][0]
+                       typeChar = tiffTypes[type][1]
                        input.seek(entryOffset + 8)
-                       w = input.read(2) # assuming SHORT atm, i.e. only imgs with max resolution of 64k x 64k supported
-                       width = int(struct.unpack(boChar + "H", w)[0])
-                   elif(tag == 257):
-                       input.seek(entryOffset + 8)
-                       h = input.read(2) # assuming SHORT atm, i.e. only imgs with max resolution of 64k x 64k supported
-                       height = int(struct.unpack(boChar + "H", h)[0])
+                       value = input.read(typeSize)
+                       value = int(struct.unpack(typeChar, value)[0])
+                       if tag == 256: 
+                           width = value 
+                       else: 
+                           height = value
                    if width > -1 and height > -1:
                        break
             except Exception as e:
