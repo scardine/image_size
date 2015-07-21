@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #-------------------------------------------------------------------------------
 # Name:        get_image_size
-# Purpose:     extract image dimentions given a file path
+# Purpose:     extract image dimensions given a file path
 #
 # Author:      Paulo Scardine (based on code from Emmanuel VAÏSSE)
 #
@@ -86,6 +86,56 @@ def get_image_size(file_path):
                 height = abs(int(h)) # as h is negative when stored upside down
             else:
                 raise UnknownImageFormat("Unkown DIB header size:" + str(headersize))
+        elif (size >= 8) and data[:4] in ("II\052\000", "MM\000\052"):
+            # Standard TIFF, big- or little-endian
+            # BigTIFF and other different but TIFF-like formats are not supported currently
+            byteOrder = data[:2]
+            boChar = ">" if byteOrder == "MM" else "<"
+            tiffTypes = { # maps TIFF type id to size (in bytes) and python format char for struct
+                1  : (1, boChar + "B"),  # BYTE
+                2  : (1, boChar + "c"),  # ASCII
+                3  : (2, boChar + "H"),  # SHORT
+                4  : (4, boChar + "L"),  # LONG
+                5  : (8, boChar + "LL"), # RATIONAL
+                6  : (1, boChar + "b"),  # SBYTE
+                7  : (1, boChar + "c"),  # UNDEFINED
+                8  : (2, boChar + "h"),  # SSHORT
+                9  : (4, boChar + "l"),  # SLONG
+                10 : (8, boChar + "ll"), # SRATIONAL
+                11 : (4, boChar + "f"),  # FLOAT
+                12 : (8, boChar + "d")   # DOUBLE
+            }
+            ifdOffset = struct.unpack(boChar + "L", data[4:8])[0]
+            try:
+                countSize = 2
+                input.seek(ifdOffset)
+                ec = input.read(countSize)
+                ifdEntryCount = struct.unpack(boChar + "H", ec)[0]
+                ifdEntrySize = 12 # 2 bytes: TagId + 2 bytes: type + 4 bytes: count of values + 4 bytes: value offset
+                for i in range(ifdEntryCount):
+                   entryOffset = ifdOffset + countSize + i * ifdEntrySize
+                   input.seek(entryOffset)
+                   tag = input.read(2)
+                   tag = struct.unpack(boChar + "H", tag)[0]
+                   if(tag == 256 or tag == 257):
+                       # if type indicates that value fits into 4 bytes, value offset is not an offset but value itself
+                       type = input.read(2)
+                       type = struct.unpack(boChar + "H", type)[0]
+                       if not type in tiffTypes:
+                           raise UnknownImageFormat("Unkown TIFF field type:" + str(type))
+                       typeSize = tiffTypes[type][0]
+                       typeChar = tiffTypes[type][1]
+                       input.seek(entryOffset + 8)
+                       value = input.read(typeSize)
+                       value = int(struct.unpack(typeChar, value)[0])
+                       if tag == 256: 
+                           width = value 
+                       else: 
+                           height = value
+                   if width > -1 and height > -1:
+                       break
+            except Exception as e:
+                raise UnknownImageFormat(str(e))
         elif size >= 2:
         	#see http://en.wikipedia.org/wiki/ICO_(file_format)
         	input.seek(0)
