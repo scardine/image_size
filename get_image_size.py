@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
 # Name:        get_image_size
 # Purpose:     extract image dimensions given a file path
 #
@@ -10,7 +10,7 @@ from __future__ import print_function
 # Created:     26/09/2013
 # Copyright:   (c) Paulo Scardine 2013
 # Licence:     MIT
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
 #!/usr/bin/env python
 import collections
 import json
@@ -18,6 +18,7 @@ import os
 import struct
 
 FILE_UNKNOWN = "Sorry, don't know how to get size for this file."
+
 
 class UnknownImageFormat(Exception):
     pass
@@ -33,14 +34,16 @@ TIFF = types['TIFF'] = 'TIFF'
 
 image_fields = ['path', 'type', 'file_size', 'width', 'height']
 
+
 class Image(collections.namedtuple('Image', image_fields)):
+
     def to_str_row(self):
         return ("%d\t%d\t%d\t%s\t%s" % (
             self.width,
             self.height,
             self.file_size,
             self.type,
-            self.path.replace('\t','\\t'),
+            self.path.replace('\t', '\\t'),
         ))
 
     def to_str_row_verbose(self):
@@ -49,7 +52,7 @@ class Image(collections.namedtuple('Image', image_fields)):
             self.height,
             self.file_size,
             self.type,
-            self.path.replace('\t','\\t'),
+            self.path.replace('\t', '\\t'),
             self))
 
     def to_str_json(self, indent=None):
@@ -112,14 +115,17 @@ def get_image_metadata(file_path):
             b = input.read(1)
             try:
                 while (b and ord(b) != 0xDA):
-                    while (ord(b) != 0xFF): b = input.read(1)
-                    while (ord(b) == 0xFF): b = input.read(1)
+                    while (ord(b) != 0xFF):
+                        b = input.read(1)
+                    while (ord(b) == 0xFF):
+                        b = input.read(1)
                     if (ord(b) >= 0xC0 and ord(b) <= 0xC3):
                         input.read(3)
                         h, w = struct.unpack(">HH", input.read(4))
                         break
                     else:
-                        input.read(int(struct.unpack(">H", input.read(2))[0])-2)
+                        input.read(
+                            int(struct.unpack(">H", input.read(2))[0]) - 2)
                     b = input.read(1)
                 width = int(w)
                 height = int(h)
@@ -140,28 +146,32 @@ def get_image_metadata(file_path):
             elif headersize >= 40:
                 w, h = struct.unpack("<ii", data[18:26])
                 width = int(w)
-                height = abs(int(h)) # as h is negative when stored upside down
+                # as h is negative when stored upside down
+                height = abs(int(h))
             else:
-                raise UnknownImageFormat("Unkown DIB header size:" + str(headersize))
+                raise UnknownImageFormat(
+                    "Unkown DIB header size:" +
+                    str(headersize))
         elif (size >= 8) and data[:4] in ("II\052\000", "MM\000\052"):
             # Standard TIFF, big- or little-endian
-            # BigTIFF and other different but TIFF-like formats are not supported currently
+            # BigTIFF and other different but TIFF-like formats are not
+            # supported currently
             imgtype = TIFF
             byteOrder = data[:2]
             boChar = ">" if byteOrder == "MM" else "<"
-            tiffTypes = { # maps TIFF type id to size (in bytes) and python format char for struct
-                1  : (1, boChar + "B"),  # BYTE
-                2  : (1, boChar + "c"),  # ASCII
-                3  : (2, boChar + "H"),  # SHORT
-                4  : (4, boChar + "L"),  # LONG
-                5  : (8, boChar + "LL"), # RATIONAL
-                6  : (1, boChar + "b"),  # SBYTE
-                7  : (1, boChar + "c"),  # UNDEFINED
-                8  : (2, boChar + "h"),  # SSHORT
-                9  : (4, boChar + "l"),  # SLONG
-                10 : (8, boChar + "ll"), # SRATIONAL
-                11 : (4, boChar + "f"),  # FLOAT
-                12 : (8, boChar + "d")   # DOUBLE
+            tiffTypes = {  # maps TIFF type id to size (in bytes) and python format char for struct
+                1: (1, boChar + "B"),  # BYTE
+                2: (1, boChar + "c"),  # ASCII
+                3: (2, boChar + "H"),  # SHORT
+                4: (4, boChar + "L"),  # LONG
+                5: (8, boChar + "LL"),  # RATIONAL
+                6: (1, boChar + "b"),  # SBYTE
+                7: (1, boChar + "c"),  # UNDEFINED
+                8: (2, boChar + "h"),  # SSHORT
+                9: (4, boChar + "l"),  # SLONG
+                10: (8, boChar + "ll"),  # SRATIONAL
+                11: (4, boChar + "f"),  # FLOAT
+                12: (8, boChar + "d")   # DOUBLE
             }
             ifdOffset = struct.unpack(boChar + "L", data[4:8])[0]
             try:
@@ -169,50 +179,55 @@ def get_image_metadata(file_path):
                 input.seek(ifdOffset)
                 ec = input.read(countSize)
                 ifdEntryCount = struct.unpack(boChar + "H", ec)[0]
-                ifdEntrySize = 12 # 2 bytes: TagId + 2 bytes: type + 4 bytes: count of values + 4 bytes: value offset
+                # 2 bytes: TagId + 2 bytes: type + 4 bytes: count of values + 4
+                # bytes: value offset
+                ifdEntrySize = 12
                 for i in range(ifdEntryCount):
-                   entryOffset = ifdOffset + countSize + i * ifdEntrySize
-                   input.seek(entryOffset)
-                   tag = input.read(2)
-                   tag = struct.unpack(boChar + "H", tag)[0]
-                   if(tag == 256 or tag == 257):
-                       # if type indicates that value fits into 4 bytes, value offset is not an offset but value itself
-                       type = input.read(2)
-                       type = struct.unpack(boChar + "H", type)[0]
-                       if not type in tiffTypes:
-                           raise UnknownImageFormat("Unkown TIFF field type:" + str(type))
-                       typeSize = tiffTypes[type][0]
-                       typeChar = tiffTypes[type][1]
-                       input.seek(entryOffset + 8)
-                       value = input.read(typeSize)
-                       value = int(struct.unpack(typeChar, value)[0])
-                       if tag == 256:
-                           width = value
-                       else:
-                           height = value
-                   if width > -1 and height > -1:
-                       break
+                    entryOffset = ifdOffset + countSize + i * ifdEntrySize
+                    input.seek(entryOffset)
+                    tag = input.read(2)
+                    tag = struct.unpack(boChar + "H", tag)[0]
+                    if(tag == 256 or tag == 257):
+                        # if type indicates that value fits into 4 bytes, value
+                        # offset is not an offset but value itself
+                        type = input.read(2)
+                        type = struct.unpack(boChar + "H", type)[0]
+                        if type not in tiffTypes:
+                            raise UnknownImageFormat(
+                                "Unkown TIFF field type:" +
+                                str(type))
+                        typeSize = tiffTypes[type][0]
+                        typeChar = tiffTypes[type][1]
+                        input.seek(entryOffset + 8)
+                        value = input.read(typeSize)
+                        value = int(struct.unpack(typeChar, value)[0])
+                        if tag == 256:
+                            width = value
+                        else:
+                            height = value
+                    if width > -1 and height > -1:
+                        break
             except Exception as e:
                 raise UnknownImageFormat(str(e))
         elif size >= 2:
-        	#see http://en.wikipedia.org/wiki/ICO_(file_format)
-        	imgtype = 'ICO'
-        	input.seek(0)
-        	reserved = input.read(2)
-        	if 0 != struct.unpack("<H", reserved )[0]:
-        		raise UnknownImageFormat(FILE_UNKNOWN)
-        	format = input.read(2)
-        	assert 1 == struct.unpack("<H", format)[0]
-        	num = input.read(2)
-        	num = struct.unpack("<H", num)[0]
-        	if num > 1:
-        		import warnings
-        		warnings.warn("ICO File contains more than one image")
-        	#http://msdn.microsoft.com/en-us/library/ms997538.aspx
-        	w = input.read(1)
-        	h = input.read(1)
-        	width = ord(w)
-        	height = ord(h)
+                # see http://en.wikipedia.org/wiki/ICO_(file_format)
+            imgtype = 'ICO'
+            input.seek(0)
+            reserved = input.read(2)
+            if 0 != struct.unpack("<H", reserved)[0]:
+                raise UnknownImageFormat(FILE_UNKNOWN)
+            format = input.read(2)
+            assert 1 == struct.unpack("<H", format)[0]
+            num = input.read(2)
+            num = struct.unpack("<H", num)[0]
+            if num > 1:
+                import warnings
+                warnings.warn("ICO File contains more than one image")
+            # http://msdn.microsoft.com/en-us/library/ms997538.aspx
+            w = input.read(1)
+            h = input.read(1)
+            width = ord(w)
+            height = ord(h)
         else:
             raise UnknownImageFormat(FILE_UNKNOWN)
 
@@ -286,15 +301,14 @@ def main(argv=None):
                    action='store_true')
 
     prs.add_option('-v', '--verbose',
-                    dest='verbose',
-                    action='store_true',)
+                   dest='verbose',
+                   action='store_true',)
     prs.add_option('-q', '--quiet',
-                    dest='quiet',
-                    action='store_true',)
+                   dest='quiet',
+                   action='store_true',)
     prs.add_option('-t', '--test',
-                    dest='run_tests',
-                    action='store_true',)
-
+                   dest='run_tests',
+                   action='store_true',)
 
     argv = list(argv) if argv else []
     (opts, args) = prs.parse_args(args=argv)
@@ -314,7 +328,6 @@ def main(argv=None):
         sys.argv = [sys.argv[0]] + args
         import unittest
         return unittest.main()
-
 
     output_func = Image.to_str_row
     if opts.json_indent:
