@@ -159,3 +159,19 @@ def get_image_size(file_path):
 
     return width, height
 
+
+def main(argv=None):
+    """
+    Print "width height" for the given file path.
+    """
+    argv = argv if argv is not None else []
+    img_size = get_image_size(argv[0])
+    print("%d %d" % img_size)
+    return 0
+
+    
+if __name__ == "__main__":
+    import sys
+    main(argv=sys.argv[1:])
+    
+    
