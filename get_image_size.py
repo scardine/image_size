@@ -163,7 +163,9 @@ def get_image_metadata(file_path):
             imgtype = TIFF
             byteOrder = data[:2]
             boChar = ">" if byteOrder == "MM" else "<"
-            tiffTypes = {  # maps TIFF type id to size (in bytes) and python format char for struct
+            # maps TIFF type id to size (in bytes)
+            # and python format char for struct
+            tiffTypes = {
                 1: (1, boChar + "B"),  # BYTE
                 2: (1, boChar + "c"),  # ASCII
                 3: (2, boChar + "H"),  # SHORT
@@ -283,8 +285,6 @@ class Test_get_image_size(unittest.TestCase):
         self.assertEqual(output,
                          (img['width'],
                           img['height']))
-
-
 
     def tearDown(self):
         pass
