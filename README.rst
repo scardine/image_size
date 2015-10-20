@@ -56,7 +56,7 @@ Python ``get_image_size.get_image_metadata`` usage:
        img = get_image_size.get_image_metadata('/path/to/image.ext')
        width, height = img.width, img.height
        print(img._asdict())
-   except UnknownImageFormat:
+   except get_image_size.UnknownImageFormat:
        width, height = -1, -1
 
 Commandline ``get-image-size`` usage:
