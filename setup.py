@@ -22,6 +22,7 @@ setup(
     long_description=LONG_DESCRIPTION,
     author='github.com/scardine',
     author_email=' ',
+    license='MIT',
     py_modules=['get_image_size'],
     entry_points={
         'console_scripts': [
