@@ -325,7 +325,7 @@ def main(argv=None):
                    dest='run_tests',
                    action='store_true',)
 
-    argv = list(argv) if argv else []
+    argv = list(argv) if argv is not None else sys.argv[1:]
     (opts, args) = prs.parse_args(args=argv)
     loglevel = logging.INFO
     if opts.verbose:
