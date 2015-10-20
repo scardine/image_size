@@ -128,9 +128,9 @@ def get_image_size(file_path):
                        input.seek(entryOffset + 8)
                        value = input.read(typeSize)
                        value = int(struct.unpack(typeChar, value)[0])
-                       if tag == 256: 
-                           width = value 
-                       else: 
+                       if tag == 256:
+                           width = value
+                       else:
                            height = value
                    if width > -1 and height > -1:
                        break
@@ -169,9 +169,9 @@ def main(argv=None):
     print("%d %d" % img_size)
     return 0
 
-    
+
 if __name__ == "__main__":
     import sys
     sys.exit(main(argv=sys.argv[1:]))
-    
-    
+
+
