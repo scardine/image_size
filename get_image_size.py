@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-#-------------------------------------------------------------------------
-# Name:        get_image_size
-# Purpose:     extract image dimensions given a file path
-#
-# Author:      Paulo Scardine (based on code from Emmanuel VAÏSSE)
-#
-# Created:     26/09/2013
-# Copyright:   (c) Paulo Scardine 2013
-# Licence:     MIT
-#-------------------------------------------------------------------------
-#!/usr/bin/env python
+"""
+
+get_image_size.py
+====================
+
+    :Name:        get_image_size
+    :Purpose:     extract image dimensions given a file path
+
+    :Author:      Paulo Scardine (based on code from Emmanuel VAÏSSE)
+
+    :Created:     26/09/2013
+    :Copyright:   (c) Paulo Scardine 2013
+    :Licence:     MIT
+
+"""
 import collections
 import json
 import os
