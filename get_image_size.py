@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 #-------------------------------------------------------------------------------
 # Name:        get_image_size
 # Purpose:     extract image dimensions given a file path
@@ -12,6 +13,7 @@
 #-------------------------------------------------------------------------------
 #!/usr/bin/env python
 import collections
+import json
 import os
 import struct
 
@@ -32,7 +34,26 @@ TIFF = types['TIFF'] = 'TIFF'
 image_fields = ['path', 'type', 'file_size', 'width', 'height']
 
 class Image(collections.namedtuple('Image', image_fields)):
-    pass
+    def to_str_row(self):
+        return ("%d\t%d\t%d\t%s\t%s" % (
+            self.width,
+            self.height,
+            self.file_size,
+            self.type,
+            self.path.replace('\t','\\t'),
+        ))
+
+    def to_str_row_verbose(self):
+        return ("%d\t%d\t%d\t%s\t%s\t##%s" % (
+            self.width,
+            self.height,
+            self.file_size,
+            self.type,
+            self.path.replace('\t','\\t'),
+            self))
+
+    def to_str_json(self, indent=None):
+        return json.dumps(self._asdict(), indent=indent)
 
 
 def get_image_size(file_path):
@@ -202,19 +223,115 @@ def get_image_metadata(file_path):
                  height=height)
 
 
+import unittest
+
+
+class Test_get_image_size(unittest.TestCase):
+    data = [{
+        'path': 'lookmanodeps.png',
+        'width': 251,
+        'height': 208,
+        'file_size': 22228,
+        'type': 'PNG'}]
+
+    def setUp(self):
+        pass
+
+    def test_get_image_metadata(self):
+        img = self.data[0]
+        output = get_image_metadata(img['path'])
+        self.assertTrue(output)
+        self.assertEqual(output.path, img['path'])
+        self.assertEqual(output.width, img['width'])
+        self.assertEqual(output.height, img['height'])
+        self.assertEqual(output.type, img['type'])
+        self.assertEqual(output.file_size, img['file_size'])
+        for field in image_fields:
+            self.assertEqual(getattr(output, field), img[field])
+
+    def test_get_image_size(self):
+        img = self.data[0]
+        output = get_image_size(img['path'])
+        self.assertTrue(output)
+        self.assertEqual(output,
+                         (img['width'],
+                          img['height']))
+
+    def tearDown(self):
+        pass
+
+
 def main(argv=None):
     """
-    Print "width height" for the given file path.
+    Print image metadata fields for the given file path.
+
+    Keyword Arguments:
+        argv (list): commandline arguments (e.g. sys.argv[1:])
+    Returns:
+        int: zero for OK
     """
-    argv = argv if argv is not None else []
-    img = get_image_metadata(argv[0])
-    print("%d\t%d\t%s\t%r\t%d\t##%s" % (
-        img.height, img.width, img.type, img.path, img.file_size, img))
-    return 0
+    import logging
+    import optparse
+
+    prs = optparse.OptionParser(
+        usage="%prog [-v|--verbose] [--json|--json-indent] <path0> [<pathN>]",
+        description="Print metadata for the given image paths "
+                    "(without image library bindings).")
+
+    prs.add_option('--json',
+                   dest='json',
+                   action='store_true')
+    prs.add_option('--json-indent',
+                   dest='json_indent',
+                   action='store_true')
+
+    prs.add_option('-v', '--verbose',
+                    dest='verbose',
+                    action='store_true',)
+    prs.add_option('-q', '--quiet',
+                    dest='quiet',
+                    action='store_true',)
+    prs.add_option('-t', '--test',
+                    dest='run_tests',
+                    action='store_true',)
+
+
+    argv = list(argv) if argv else []
+    (opts, args) = prs.parse_args(args=argv)
+    loglevel = logging.INFO
+    if opts.verbose:
+        loglevel = logging.DEBUG
+    elif opts.quiet:
+        loglevel = logging.ERROR
+    logging.basicConfig(level=loglevel)
+    log = logging.getLogger()
+    log.debug('argv: %r', argv)
+    log.debug('opts: %r', opts)
+    log.debug('args: %r', args)
+
+    if opts.run_tests:
+        import sys
+        sys.argv = [sys.argv[0]] + args
+        import unittest
+        return unittest.main()
+
+
+    output_func = Image.to_str_row
+    if opts.json_indent:
+        import functools
+        output_func = functools.partial(Image.to_str_json, indent=2)
+    elif opts.json:
+        output_func = Image.to_str_json
+    elif opts.verbose:
+        output_func = Image.to_str_row_verbose
+
+    EX_OK = 0
+    for path_arg in args:
+        img = get_image_metadata(path_arg)
+        print(output_func(img))
+    return EX_OK
 
 
 if __name__ == "__main__":
     import sys
     sys.exit(main(argv=sys.argv[1:]))
-
-
