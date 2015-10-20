@@ -377,8 +377,8 @@ def main(argv=None):
             pass
     if len(errors):
         import pprint
-        print("ERRORS")
-        print("======")
+        print("ERRORS", file=sys.stderr)
+        print("======", file=sys.stderr)
         print(pprint.pformat(errors, indent=2), file=sys.stderr)
         return EX_NOT_OK
     return EX_OK
