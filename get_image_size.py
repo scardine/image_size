@@ -268,6 +268,14 @@ class Test_get_image_size(unittest.TestCase):
         for field in image_fields:
             self.assertEqual(getattr(output, field), img[field])
 
+    def test_get_image_metadata__ENOENT_OSError(self):
+        with self.assertRaises(OSError):
+            get_image_metadata('THIS_DOES_NOT_EXIST')
+
+    def test_get_image_metadata__not_an_image_UnknownImageFormat(self):
+        with self.assertRaises(UnknownImageFormat):
+            get_image_metadata('README.rst')
+
     def test_get_image_size(self):
         img = self.data[0]
         output = get_image_size(img['path'])
@@ -275,6 +283,8 @@ class Test_get_image_size(unittest.TestCase):
         self.assertEqual(output,
                          (img['width'],
                           img['height']))
+
+
 
     def tearDown(self):
         pass
@@ -291,6 +301,7 @@ def main(argv=None):
     """
     import logging
     import optparse
+    import sys
 
     prs = optparse.OptionParser(
         usage="%prog [-v|--verbose] [--json|--json-indent] <path0> [<pathN>]",
@@ -343,9 +354,33 @@ def main(argv=None):
         output_func = Image.to_str_row_verbose
 
     EX_OK = 0
+    EX_NOT_OK = 2
+
+    if len(args) < 1:
+        prs.print_help()
+        print('')
+        prs.error("You must specify one or more paths to image files")
+
+    errors = []
     for path_arg in args:
-        img = get_image_metadata(path_arg)
-        print(output_func(img))
+        try:
+            img = get_image_metadata(path_arg)
+            print(output_func(img))
+        except KeyboardInterrupt:
+            raise
+        except OSError as e:
+            log.error((path_arg, e))
+            errors.append((path_arg, e))
+        except Exception as e:
+            log.exception(e)
+            errors.append((path_arg, e))
+            pass
+    if len(errors):
+        import pprint
+        print("ERRORS")
+        print("======")
+        print(pprint.pformat(errors, indent=2), file=sys.stderr)
+        return EX_NOT_OK
     return EX_OK
 
 
