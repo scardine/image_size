@@ -172,6 +172,6 @@ def main(argv=None):
     
 if __name__ == "__main__":
     import sys
-    main(argv=sys.argv[1:])
+    sys.exit(main(argv=sys.argv[1:]))
     
     
