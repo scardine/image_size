@@ -11,6 +11,7 @@
 # Licence:     MIT
 #-------------------------------------------------------------------------------
 #!/usr/bin/env python
+import collections
 import os
 import struct
 
@@ -19,10 +20,40 @@ FILE_UNKNOWN = "Sorry, don't know how to get size for this file."
 class UnknownImageFormat(Exception):
     pass
 
+
+types = collections.OrderedDict()
+BMP = types['BMP'] = 'BMP'
+GIF = types['GIF'] = 'GIF'
+ICO = types['ICO'] = 'ICO'
+JPEG = types['JPEG'] = 'JPEG'
+PNG = types['PNG'] = 'PNG'
+TIFF = types['TIFF'] = 'TIFF'
+
+image_fields = ['path', 'type', 'file_size', 'width', 'height']
+
+class Image(collections.namedtuple('Image', image_fields)):
+    pass
+
+
 def get_image_size(file_path):
     """
     Return (width, height) for a given img file content - no external
     dependencies except the os and struct builtin modules
+    """
+    img = get_image_metadata(file_path)
+    return (img.width, img.height)
+
+
+def get_image_metadata(file_path):
+    """
+    Return an `Image` object for a given img file content - no external
+    dependencies except the os and struct builtin modules
+
+    Args:
+        file_path (str): path to an image file
+
+    Returns:
+        Image: (path, type, file_size, width, height)
     """
     size = os.path.getsize(file_path)
 
@@ -35,22 +66,26 @@ def get_image_size(file_path):
 
         if (size >= 10) and data[:6] in ('GIF87a', 'GIF89a'):
             # GIFs
+            imgtype = GIF
             w, h = struct.unpack("<HH", data[6:10])
             width = int(w)
             height = int(h)
         elif ((size >= 24) and data.startswith('\211PNG\r\n\032\n')
               and (data[12:16] == 'IHDR')):
             # PNGs
+            imgtype = PNG
             w, h = struct.unpack(">LL", data[16:24])
             width = int(w)
             height = int(h)
         elif (size >= 16) and data.startswith('\211PNG\r\n\032\n'):
             # older PNGs
+            imgtype = PNG
             w, h = struct.unpack(">LL", data[8:16])
             width = int(w)
             height = int(h)
         elif (size >= 2) and data.startswith('\377\330'):
             # JPEG
+            imgtype = JPEG
             input.seek(0)
             input.read(2)
             b = input.read(1)
@@ -75,6 +110,7 @@ def get_image_size(file_path):
                 raise UnknownImageFormat(e.__class__.__name__ + msg)
         elif (size >= 26) and data.startswith('BM'):
             # BMP
+            imgtype = 'BMP'
             headersize = struct.unpack("<I", data[14:18])[0]
             if headersize == 12:
                 w, h = struct.unpack("<HH", data[18:22])
@@ -89,6 +125,7 @@ def get_image_size(file_path):
         elif (size >= 8) and data[:4] in ("II\052\000", "MM\000\052"):
             # Standard TIFF, big- or little-endian
             # BigTIFF and other different but TIFF-like formats are not supported currently
+            imgtype = TIFF
             byteOrder = data[:2]
             boChar = ">" if byteOrder == "MM" else "<"
             tiffTypes = { # maps TIFF type id to size (in bytes) and python format char for struct
@@ -138,6 +175,7 @@ def get_image_size(file_path):
                 raise UnknownImageFormat(str(e))
         elif size >= 2:
         	#see http://en.wikipedia.org/wiki/ICO_(file_format)
+        	imgtype = 'ICO'
         	input.seek(0)
         	reserved = input.read(2)
         	if 0 != struct.unpack("<H", reserved )[0]:
@@ -157,7 +195,11 @@ def get_image_size(file_path):
         else:
             raise UnknownImageFormat(FILE_UNKNOWN)
 
-    return width, height
+    return Image(path=file_path,
+                 type=imgtype,
+                 file_size=size,
+                 width=width,
+                 height=height)
 
 
 def main(argv=None):
@@ -165,8 +207,9 @@ def main(argv=None):
     Print "width height" for the given file path.
     """
     argv = argv if argv is not None else []
-    img_size = get_image_size(argv[0])
-    print("%d %d" % img_size)
+    img = get_image_metadata(argv[0])
+    print("%d\t%d\t%s\t%r\t%d\t##%s" % (
+        img.height, img.width, img.type, img.path, img.file_size, img))
     return 0
 
 
