@@ -1,6 +1,9 @@
+
+import codecs
 from setuptools import setup
 
 VERSION = '0.2.0'
+
 
 def read_long_description():
     long_desc = []
@@ -21,8 +24,8 @@ setup(
     author_email=' ',
     py_modules=['get_image_size'],
     entry_points={
-      'console_scripts': [
-        'get-image-size = get_image_size:main',
-        ],
+        'console_scripts': [
+            'get-image-size = get_image_size:main',
+            ],
     },
 )
