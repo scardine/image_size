@@ -98,20 +98,20 @@ def get_image_metadata(file_path):
             w, h = struct.unpack("<HH", data[6:10])
             width = int(w)
             height = int(h)
-        elif ((size >= 24) and data.startswith('\211PNG\r\n\032\n')
+        elif ((size >= 24) and data.startswith(b'\211PNG\r\n\032\n')
               and (data[12:16] == 'IHDR')):
             # PNGs
             imgtype = PNG
             w, h = struct.unpack(">LL", data[16:24])
             width = int(w)
             height = int(h)
-        elif (size >= 16) and data.startswith('\211PNG\r\n\032\n'):
+        elif (size >= 16) and data.startswith(b'\211PNG\r\n\032\n'):
             # older PNGs
             imgtype = PNG
             w, h = struct.unpack(">LL", data[8:16])
             width = int(w)
             height = int(h)
-        elif (size >= 2) and data.startswith('\377\330'):
+        elif (size >= 2) and data.startswith(b'\377\330'):
             # JPEG
             imgtype = JPEG
             input.seek(0)
@@ -139,7 +139,7 @@ def get_image_metadata(file_path):
                 raise UnknownImageFormat("ValueError" + msg)
             except Exception as e:
                 raise UnknownImageFormat(e.__class__.__name__ + msg)
-        elif (size >= 26) and data.startswith('BM'):
+        elif (size >= 26) and data.startswith(b'BM'):
             # BMP
             imgtype = 'BMP'
             headersize = struct.unpack("<I", data[14:18])[0]
