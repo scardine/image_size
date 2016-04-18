@@ -156,7 +156,7 @@ def get_image_metadata(file_path):
                 raise UnknownImageFormat(
                     "Unkown DIB header size:" +
                     str(headersize))
-        elif (size >= 8) and data[:4] in ("II\052\000", "MM\000\052"):
+        elif (size >= 8) and data[:4] in (b"II\052\000", b"MM\000\052"):
             # Standard TIFF, big- or little-endian
             # BigTIFF and other different but TIFF-like formats are not
             # supported currently
