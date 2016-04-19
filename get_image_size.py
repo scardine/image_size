@@ -92,14 +92,14 @@ def get_image_metadata(file_path):
         data = input.read(26)
         msg = " raised while trying to decode as JPEG."
 
-        if (size >= 10) and data[:6] in ('GIF87a', 'GIF89a'):
+        if (size >= 10) and data[:6] in (b'GIF87a', b'GIF89a'):
             # GIFs
             imgtype = GIF
             w, h = struct.unpack("<HH", data[6:10])
             width = int(w)
             height = int(h)
         elif ((size >= 24) and data.startswith(b'\211PNG\r\n\032\n')
-              and (data[12:16] == 'IHDR')):
+              and (data[12:16] == b'IHDR')):
             # PNGs
             imgtype = PNG
             w, h = struct.unpack(">LL", data[16:24])
