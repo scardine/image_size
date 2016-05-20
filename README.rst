@@ -96,7 +96,7 @@ Updates
 -------
 
 Over the time people sent updates for ".ico", ".bmp" and other
-improvements. It interesting to have all those algorithms in the same
+improvements. It is interesting to have all those algorithms in the same
 place so people can reimplement them using other languages, so thanks
 for all the pull requests (you can see the list of contributions in the
 history).
