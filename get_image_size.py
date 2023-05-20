@@ -36,6 +36,7 @@ ICO = types['ICO'] = 'ICO'
 JPEG = types['JPEG'] = 'JPEG'
 PNG = types['PNG'] = 'PNG'
 TIFF = types['TIFF'] = 'TIFF'
+WEBP = types['WEBP'] = 'WEBP'
 
 image_fields = ['path', 'type', 'file_size', 'width', 'height']
 
@@ -245,6 +246,42 @@ def get_image_metadata_from_bytesio(input, size, file_path=None):
                     break
         except Exception as e:
             raise UnknownImageFormat(str(e))
+    elif (size >= 12) and data.startswith(b'RIFF') and data[8:12] == b'WEBP':
+        imgtype = WEBP
+        input.seek(12)
+        while True:
+            chunk_header = input.read(8)
+            if len(chunk_header) < 8:
+                raise UnknownImageFormat("Detected webp file but reached end of file without finding width and height metadata")
+            
+            try:
+                chunk_header, chunk_size = struct.unpack('<4sI', chunk_header)
+                if chunk_header == b'VP8X':
+                    vp8x_chunk = input.read(chunk_size)
+                    # width and height are stored as 0-based 3-byte integers
+                    # https://developers.google.com/speed/webp/docs/riff_container#extended_file_format
+                    width = int.from_bytes(vp8x_chunk[4:7], 'little') + 1
+                    height = int.from_bytes(vp8x_chunk[7:10], 'little') + 1
+                    break
+                elif chunk_header == b'VP8 ':
+                    vp8_chunk = input.read(10)
+                    # According to the VP8 Bitstream Specification, the values are stored as a 14-bit integers
+                    # https://datatracker.ietf.org/doc/html/rfc6386#section-9.1
+                    width = (int.from_bytes(vp8_chunk[6:8], 'little') & 0x3fff) + 1
+                    height = (int.from_bytes(vp8_chunk[8:10], 'little') & 0x3fff) + 1
+                    break
+                elif chunk_header == b'VP8L':
+                    vp8l_chunk = input.read(5)
+                    # According to the VP8L Bitstream Specification, the values are stored as a 14-bit integers
+                    # https://developers.google.com/speed/webp/docs/webp_lossless_bitstream_specification#3_riff_header
+                    w_h = int.from_bytes(vp8l_chunk[1:5], 'little') & 0x3fff
+                    width = (w_h & 0x3FFF) + 1
+                    height = ((w_h >> 14) & 0x3FFF) + 1
+                    break
+                else:
+                    input.seek(chunk_size, 1)
+            except (struct.error, ValueError):
+                raise UnknownImageFormat("Failed to parse image as webp. See cause exception for details")
     elif size >= 2:
             # see http://en.wikipedia.org/wiki/ICO_(file_format)
         imgtype = 'ICO'
