@@ -21,6 +21,7 @@ import json
 import os
 import io
 import struct
+import time
 
 FILE_UNKNOWN = "Sorry, don't know how to get size for this file."
 
@@ -119,7 +120,7 @@ def get_image_metadata_from_bytesio(input, size, file_path=None):
     """
     height = -1
     width = -1
-    data = input.read(26)
+    data = input.read(28)
     msg = " raised while trying to decode as JPEG."
 
     if (size >= 10) and data[:6] in (b'GIF87a', b'GIF89a'):
@@ -245,6 +246,49 @@ def get_image_metadata_from_bytesio(input, size, file_path=None):
                     break
         except Exception as e:
             raise UnknownImageFormat(str(e))
+    elif (size >= 28) and data[4:8] == b'ftyp' and \
+            any(bytes(brand) in (b'avif', b'avis') for brand in zip(*((iter(data[8:]),) * 4))):
+        MSG = 'Failed to parse image as avif. '
+        HEADER_PATH = ('meta', 'iprp', 'ipco', 'ispe')
+        MAX_HEAD_SEARCH = 2 << 10  # Don't waste time if missed 'mdat' & it's processing mdat as part of the header
+        try:
+            header_size = struct.unpack('>I', data[0:4])[0]
+            input.seek(header_size, 0)
+
+            def _find(what, up_to_bytes):
+                while input.tell() < up_to_bytes:
+                    block_size_bytes = input.read(4)
+                    # https://docs.python.org/3/library/io.html#io.RawIOBase.read
+                    if block_size_bytes is None:
+                        time.sleep(0.1)
+                        continue
+                    if not block_size_bytes:
+                        raise UnknownImageFormat(MSG + "Reached end of file")
+
+                    block_size = struct.unpack('>I', block_size_bytes)[0]
+                    block_type = input.read(4).decode('ascii')
+                    if block_type == 'mdat':
+                        raise UnknownImageFormat(MSG + "Reached image data without finding '{}' data".format(HEADER_PATH[-1]))
+                    if block_type == what:
+                        return input.tell() + block_size
+
+                    input.seek(block_size - 8, 1)
+
+                raise UnknownImageFormat(MSG + "Reached end of block but couldn't find '{}'".format(what))
+
+            sub_block_end = _find(HEADER_PATH[0], MAX_HEAD_SEARCH)
+            input.seek(4, 1)  # Jumping over meta's version and flags.
+            for find in HEADER_PATH[1:]:
+                sub_block_end = _find(find, sub_block_end)
+
+            input.seek(4, 1)  # Jumping over ispe's version and flags.
+            width = struct.unpack('>I', input.read(4))[0]
+            height = struct.unpack('>I', input.read(4))[0]
+
+        except struct.error:
+            raise UnknownImageFormat(MSG + "See cause exception for details")
+        except UnicodeDecodeError:
+            raise UnknownImageFormat(MSG + "Header name not ASCII convertible")
     elif size >= 2:
             # see http://en.wikipedia.org/wiki/ICO_(file_format)
         imgtype = 'ICO'
